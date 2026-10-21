@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz App</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    width: 95%;
+    max-width: 500px;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+h1, h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #667eea;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #5568d8;
+}
+
+.option {
+    background: #f1f1f1;
+    color: #222;
+    text-align: left;
+    margin: 10px 0;
+}
+
+.option:hover {
+    background: #ddd;
+}
+
+.correct {
+    background: #4caf50 !important;
+    color: white;
+}
+
+.wrong {
+    background: #f44336 !important;
+    color: white;
+}
+
+#quizScreen,
+#resultScreen {
+    display: none;
+}
+
+.top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+#question {
+    margin-bottom: 20px;
+}
+
+#message {
+    color: red;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.score {
+    text-align: center;
+    font-size: 24px;
+    margin: 20px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen">
+        <h1>Quiz App</h1>
+        <h2>Login</h2>
+
+        <input type="text" id="username" placeholder="Enter username">
+        <input type="password" id="password" placeholder="Enter password">
+
+        <button onclick="login()">Login</button>
+
+        <p id="message"></p>
+    </div>
+
+
+    <!-- QUIZ SCREEN -->
+    <div id="quizScreen">
+
+        <div class="top">
+            <span id="userDisplay"></span>
+            <span>Time: <span id="timer">30</span>s</span>
+        </div>
+
+        <h2 id="question"></h2>
+
+        <div id="options"></div>
+
+        <button onclick="nextQuestion()">Next Question</button>
+
+    </div>
+
+
+    <!-- RESULT SCREEN -->
+    <div id="resultScreen">
+
+        <h1>Quiz Completed!</h1>
+
+        <div class="score">
+            Your Score: <span id="score"></span>
+        </div>
+
+        <button onclick="restartQuiz()">Restart Quiz</button>
+
+        <button onclick="logout()">Logout</button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+// =========================
+// LOGIN DETAILS
+// =========================
+
+const correctUsername = "admin";
+const correctPassword = "1234";
+
+
+// =========================
+// QUIZ QUESTIONS
+// =========================
+
+const questions = [
+    {
+        question: "Which language is used to create the structure of a webpage?",
+        options: ["CSS", "HTML", "JavaScript", "Python"],
+        answer: "HTML"
+    },
+
+    {
+        question: "Which language is mainly used to style a webpage?",
+        options: ["HTML", "CSS", "Java", "Python"],
+        answer: "CSS"
+    },
+
+    {
+        question: "Which language is used to make webpages interactive?",
+        options: ["HTML", "CSS", "JavaScript", "SQL"],
+        answer: "JavaScript"
+    },
+
+    {
+        question: "Which keyword is used to declare a variable in JavaScript?",
+        options: ["var", "int", "string", "define"],
+        answer: "var"
+    },
+
+    {
+        question: "Which symbol is used for comments in JavaScript?",
+        options: ["//", "#", "<!-- -->", "/* */"],
+        answer: "//"
+    },
+
+    {
+        question: "Which company developed Java?",
+        options: ["Microsoft", "Sun Microsystems", "Google", "Apple"],
+        answer: "Sun Microsystems"
+    },
+
+    {
+        question: "Which data structure follows FIFO?",
+        options: ["Stack", "Queue", "Tree", "Graph"],
+        answer: "Queue"
+    },
+
+    {
+        question: "Which data structure follows LIFO?",
+        options: ["Queue", "Array", "Stack", "Linked List"],
+        answer: "Stack"
+    },
+
+    {
+        question: "What does CPU stand for?",
+        options: [
+            "Central Processing Unit",
+            "Computer Personal Unit",
+            "Central Program Utility",
+            "Control Processing Unit"
+        ],
+        answer: "Central Processing Unit"
+    },
+
+    {
+        question: "Which database language is used to manage relational databases?",
+        options: ["HTML", "SQL", "CSS", "JavaScript"],
+        answer: "SQL"
+    }
+];
+
+
+// =========================
+// VARIABLES
+// =========================
+
+let currentQuestion = 0;
+let score = 0;
+let timeLeft = 30;
+let timer;
+
+
+// =========================
+// LOGIN FUNCTION
+// =========================
+
+function login() {
+
+    let username = document.getElementById("username").value;
+    let password = document.getElementById("password").value;
+
+    if (username === correctUsername && password === correctPassword) {
+
+        localStorage.setItem("quizUser", username);
+
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("quizScreen").style.display = "block";
+
+        document.getElementById("userDisplay").innerText =
+            "User: " + username;
+
+        startQuiz();
+
+    } else {
+
+        document.getElementById("message").innerText =
+            "Invalid username or password!";
+    }
+}
+
+
+// =========================
+// START QUIZ
+// =========================
+
+function startQuiz() {
+
+    currentQuestion = 0;
+    score = 0;
+
+    showQuestion();
+}
+
+
+// =========================
+// SHOW QUESTION
+// =========================
+
+function showQuestion() {
+
+    clearInterval(timer);
+
+    timeLeft = 30;
+
+    document.getElementById("timer").innerText = timeLeft;
+
+    let q = questions[currentQuestion];
+
+    document.getElementById("question").innerText =
+        (currentQuestion + 1) + ". " + q.question;
+
+    let optionsDiv = document.getElementById("options");
+
+    optionsDiv.innerHTML = "";
+
+    q.options.forEach(function(option) {
+
+        let button = document.createElement("button");
+
+        button.innerText = option;
+        button.classList.add("option");
+
+        button.onclick = function() {
+
+            checkAnswer(button, option);
+        };
+
+        optionsDiv.appendChild(button);
+    });
+
+    startTimer();
+}
+
+
+// =========================
+// CHECK ANSWER
+// =========================
+
+function checkAnswer(button, selectedAnswer) {
+
+    let correctAnswer = questions[currentQuestion].answer;
+
+    let allButtons =
+        document.querySelectorAll(".option");
+
+    allButtons.forEach(function(btn) {
+        btn.disabled = true;
+    });
+
+    if (selectedAnswer === correctAnswer) {
+
+        button.classList.add("correct");
+
+        score++;
+
+    } else {
+
+        button.classList.add("wrong");
+
+        allButtons.forEach(function(btn) {
+
+            if (btn.innerText === correctAnswer) {
+                btn.classList.add("correct");
+            }
+
+        });
+    }
+
+    clearInterval(timer);
+}
+
+
+// =========================
+// NEXT QUESTION
+// =========================
+
+function nextQuestion() {
+
+    currentQuestion++;
+
+    if (currentQuestion < questions.length) {
+
+        showQuestion();
+
+    } else {
+
+        showResult();
+    }
+}
+
+
+// =========================
+// TIMER
+// =========================
+
+function startTimer() {
+
+    timer = setInterval(function() {
+
+        timeLeft--;
+
+        document.getElementById("timer").innerText =
+            timeLeft;
+
+        if (timeLeft <= 0) {
+
+            clearInterval(timer);
+
+            nextQuestion();
+        }
+
+    }, 1000);
+}
+
+
+// =========================
+// RESULT
+// =========================
+
+function showResult() {
+
+    clearInterval(timer);
+
+    document.getElementById("quizScreen").style.display =
+        "none";
+
+    document.getElementById("resultScreen").style.display =
+        "block";
+
+    document.getElementById("score").innerText =
+        score + " / " + questions.length;
+}
+
+
+// =========================
+// RESTART
+// =========================
+
+function restartQuiz() {
+
+    document.getElementById("resultScreen").style.display =
+        "none";
+
+    document.getElementById("quizScreen").style.display =
+        "block";
+
+    startQuiz();
+}
+
+
+// =========================
+// LOGOUT
+// =========================
+
+function logout() {
+
+    localStorage.removeItem("quizUser");
+
+    clearInterval(timer);
+
+    document.getElementById("resultScreen").style.display =
+        "none";
+
+    document.getElementById("quizScreen").style.display =
+        "none";
+
+    document.getElementById("loginScreen").style.display =
+        "block";
+
+    document.getElementById("username").value = "";
+    document.getElementById("password").value = "";
+}
+
+
+// =========================
+// AUTO LOGIN CHECK
+// =========================
+
+window.onload = function() {
+
+    let savedUser = localStorage.getItem("quizUser");
+
+    if (savedUser) {
+
+        document.getElementById("loginScreen").style.display =
+            "none";
+
+        document.getElementById("quizScreen").style.display =
+            "block";
+
+        document.getElementById("userDisplay").innerText =
+            "User: " + savedUser;
+
+        startQuiz();
+    }
+};
+
+</script>
+
+</body>
+</html>
